@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass, field
 
 import levanter
-from levanter.data.shard_cache import LoggingMetricsMonitor, RichMetricsMonitor, build_cache
+from levanter.data.shard_cache import LoggingMetricsMonitor, RichMetricsMonitor, build_or_load_cache
 from levanter.data.text import BatchTokenizer, LMDatasetConfig
 from levanter.distributed import RayConfig
 from levanter.logging import init_logging
@@ -37,11 +37,11 @@ def main(args: RayCachedLMDatasetConfig):
             logger.warning(f"Skipping {split} because it is empty.")
             continue
 
-        monitors = [RichMetricsMonitor(source.num_shards)]
+        monitors: list = [RichMetricsMonitor(source.num_shards)]
         if not isinstance(args.tracker, NoopConfig):
             monitors.append(LoggingMetricsMonitor("preprocess/" + split, commit=True))
 
-        cache = build_cache(
+        cache = build_or_load_cache(
             cache_dir=split_cache_dir,
             input_shards=source,
             processor=batch_tokenizer,
